@@ -1,0 +1,104 @@
+# Environment variables - NEVER COMMIT THESE
+.env
+.env.local
+.env.production
+.env.development
+.env*.local
+
+# MCP configuration contains API keys and tokens
+.mcp.json
+.claude/mcp.json
+.vscode/mcp.json
+mcp.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+!node_modules/.vite
+
+**/tempobook/dynamic/
+**/tempobook/storyboards/
+
+# Local settings
+settings.local.json
+
+core
+
+.github/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+.ssh/config
+.ssh/id_rsa
+.ssh/rsa_id
+
+# Supabase
+/supabase/.temp
+
+# Generated TypeScript types - regenerate with npm run types:supabase
+/database.types.ts
+
+# ESLint reports - regenerate with npm run lint:report
+eslint-report.html
+
+# DocuSign private keys - NEVER COMMIT THESE
+*.pem
+docusign_private*
+*docusign*key*
+
+# Large binary files
+*.deb
+*.rpm
+*.dmg
+*.exe
+*.msi
+.env
+# Learning Mode data
+data/operations.json
+data/learning-report*.json
+
+# CodeGPT - Don't commit personal cache/logs but DO commit configs
+.codegpt/cache/
+.codegpt/logs/
+.codegpt/*.local.json
+.codegpt/temp/
+# Keep: .codegpt/config.json, prompts.json, graph-config.json, saved-queries/
+
+# Vercel
+.vercel
+.vercel.json
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# TypeScript
+*.tsbuildinfo
+
+# OS
+Thumbs.db
