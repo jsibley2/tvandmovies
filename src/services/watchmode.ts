@@ -3,6 +3,7 @@ import type {
   WatchModeSearchResult,
   WatchModeSourcesResponse,
   WatchModeSeasonResponse,
+  WatchModeEpisode,
   StreamingSource,
   Season
 } from '@/types/show.types'
@@ -211,6 +212,55 @@ export class WatchModeAPI {
   }
 
   /**
+   * Get episodes for a specific season
+   */
+  async getEpisodes(showId: number, seasonNumber: number): Promise<WatchModeEpisode[]> {
+    if (!this.apiKey) {
+      throw new Error('API key not configured')
+    }
+
+    const cacheKey = `episodes:${showId}:${seasonNumber}`
+    const cached = getCached<WatchModeEpisode[]>(cacheKey)
+    if (cached) return cached
+
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/title/${showId}/episodes/`,
+        {
+          params: {
+            apiKey: this.apiKey
+          }
+        }
+      )
+
+      // Filter episodes for the specific season
+      const allEpisodes = response.data || []
+      const seasonEpisodes = allEpisodes.filter(
+        (ep: WatchModeEpisode) => ep.season_number === seasonNumber
+      )
+
+      console.log('Episodes for season', seasonNumber, ':', seasonEpisodes.length)
+      if (seasonEpisodes.length > 0) {
+        console.log('Last episode:', seasonEpisodes[seasonEpisodes.length - 1])
+      }
+
+      setCache(cacheKey, seasonEpisodes)
+      return seasonEpisodes
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          return [] // No episode data
+        }
+        if (error.response?.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment.')
+        }
+      }
+      console.error('Failed to get episodes:', error)
+      return []
+    }
+  }
+
+  /**
    * Get complete show data (search + sources + seasons)
    */
   async getShowData(title: string) {
@@ -229,16 +279,31 @@ export class WatchModeAPI {
       ? seasons.reduce((max, s) => s.season_number > max.season_number ? s : max, seasons[0])
       : null
 
-    // Try to estimate end date: if there's a next season, use its start date
-    // Otherwise use last_air_date if available
-    let seasonEndDate = latestSeason?.last_air_date || null
-    if (!seasonEndDate && seasons.length > 1) {
-      // Sort seasons by number
-      const sorted = [...seasons].sort((a, b) => a.season_number - b.season_number)
-      const latestIndex = sorted.findIndex(s => s.season_number === latestSeason?.season_number)
-      if (latestIndex >= 0 && latestIndex < sorted.length - 1) {
-        // Use next season's start as this season's end
-        seasonEndDate = sorted[latestIndex + 1].first_air_date
+    // Get episodes for the latest season to determine actual end date
+    let seasonEndDate: string | null = null
+    if (latestSeason) {
+      const episodes = await this.getEpisodes(searchResult.id, latestSeason.season_number)
+
+      if (episodes.length > 0) {
+        // Find the episode with the latest air date
+        const episodesWithDates = episodes.filter(ep => ep.air_date)
+        if (episodesWithDates.length > 0) {
+          const lastEpisode = episodesWithDates.reduce((latest, ep) => {
+            return new Date(ep.air_date!) > new Date(latest.air_date!) ? ep : latest
+          }, episodesWithDates[0])
+          seasonEndDate = lastEpisode.air_date
+          console.log('Season end date from last episode:', seasonEndDate)
+        }
+      }
+
+      // Fallback: try to estimate end date if no episode data available
+      if (!seasonEndDate && seasons.length > 1) {
+        const sorted = [...seasons].sort((a, b) => a.season_number - b.season_number)
+        const latestIndex = sorted.findIndex(s => s.season_number === latestSeason?.season_number)
+        if (latestIndex >= 0 && latestIndex < sorted.length - 1) {
+          seasonEndDate = sorted[latestIndex + 1].first_air_date
+          console.log('Season end date estimated from next season start:', seasonEndDate)
+        }
       }
     }
 
