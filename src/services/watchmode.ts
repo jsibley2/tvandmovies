@@ -241,7 +241,8 @@ export class WatchModeAPI {
 
       console.log('Episodes for season', seasonNumber, ':', seasonEpisodes.length)
       if (seasonEpisodes.length > 0) {
-        console.log('Last episode:', seasonEpisodes[seasonEpisodes.length - 1])
+        console.log('Last episode:', JSON.stringify(seasonEpisodes[seasonEpisodes.length - 1], null, 2))
+        console.log('All episode fields:', Object.keys(seasonEpisodes[0]))
       }
 
       setCache(cacheKey, seasonEpisodes)
@@ -285,13 +286,13 @@ export class WatchModeAPI {
       const episodes = await this.getEpisodes(searchResult.id, latestSeason.season_number)
 
       if (episodes.length > 0) {
-        // Find the episode with the latest air date
-        const episodesWithDates = episodes.filter(ep => ep.air_date)
+        // Find the episode with the latest release date
+        const episodesWithDates = episodes.filter(ep => ep.release_date)
         if (episodesWithDates.length > 0) {
           const lastEpisode = episodesWithDates.reduce((latest, ep) => {
-            return new Date(ep.air_date!) > new Date(latest.air_date!) ? ep : latest
+            return new Date(ep.release_date!) > new Date(latest.release_date!) ? ep : latest
           }, episodesWithDates[0])
-          seasonEndDate = lastEpisode.air_date
+          seasonEndDate = lastEpisode.release_date
           console.log('Season end date from last episode:', seasonEndDate)
         }
       }

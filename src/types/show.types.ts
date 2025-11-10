@@ -59,12 +59,12 @@ export type WatchModeSeasonResponse = WatchModeSeason[]
 
 export interface WatchModeEpisode {
   id: number
-  title: string
+  name: string
   season_number: number
   episode_number: number
-  air_date: string | null
+  release_date: string | null
   runtime_minutes?: number
-  plot_overview?: string
+  overview?: string
 }
 
 export type ShowStatus = 'idle' | 'loading' | 'success' | 'error'
