@@ -40,6 +40,11 @@ export function useShowData() {
               latestSeason: null,
               seasonStartDate: null,
               seasonEndDate: null,
+              episodeCount: null,
+              genreNames: null,
+              userRating: null,
+              criticScore: null,
+              originalLanguage: null,
               isLoading: false,
               error: null
             }
@@ -73,6 +78,10 @@ export function useShowData() {
               seasonStartDate: data.seasonStartDate,
               seasonEndDate: data.seasonEndDate,
               episodeCount: data.episodeCount,
+              genreNames: data.genreNames,
+              userRating: data.userRating,
+              criticScore: data.criticScore,
+              originalLanguage: data.originalLanguage,
               isLoading: false,
               error: null,
               lastUpdated: Date.now()
@@ -94,7 +103,12 @@ export function useShowData() {
                 streamingSources: [],
                 latestSeason: null,
                 seasonStartDate: null,
-                seasonEndDate: null
+                seasonEndDate: null,
+                episodeCount: null,
+                genreNames: null,
+                userRating: null,
+                criticScore: null,
+                originalLanguage: null
               }
             : show
         ))
@@ -111,7 +125,12 @@ export function useShowData() {
               streamingSources: [],
               latestSeason: null,
               seasonStartDate: null,
-              seasonEndDate: null
+              seasonEndDate: null,
+              episodeCount: null,
+              genreNames: null,
+              userRating: null,
+              criticScore: null,
+              originalLanguage: null
             }
           : show
       ))
@@ -128,13 +147,17 @@ export function useShowData() {
 
   const addShow = useCallback(() => {
     const newShow: TVShow = {
-      id: `show-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `show-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       title: '',
       streamingSources: [],
       latestSeason: null,
       seasonStartDate: null,
       seasonEndDate: null,
       episodeCount: null,
+      genreNames: null,
+      userRating: null,
+      criticScore: null,
+      originalLanguage: null,
       isLoading: false,
       error: null
     }

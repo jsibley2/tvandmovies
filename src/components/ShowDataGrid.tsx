@@ -1,7 +1,8 @@
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid'
 import { StreamingChips } from './StreamingChips'
+import { GenreChips } from './GenreChips'
 import { formatDate } from '@/lib/utils'
-import { Trash2, RefreshCw, Loader2 } from 'lucide-react'
+import { Trash2, RefreshCw, Loader2, Star } from 'lucide-react'
 import type { TVShow } from '@/types/show.types'
 
 interface ShowDataGridProps {
@@ -49,6 +50,89 @@ export function ShowDataGrid({ showData }: ShowDataGridProps) {
         const row = params.row as TVShow
         if (row.isLoading) return '...'
         return params.value || '-'
+      }
+    },
+    {
+      field: 'genreNames',
+      headerName: 'Genres',
+      width: 220,
+      sortable: false,
+      renderCell: (params: GridRenderCellParams<TVShow>) => {
+        const row = params.row as TVShow
+        if (row.isLoading) {
+          return <span className="text-sm text-muted-foreground">Loading...</span>
+        }
+        if (row.error) return '-'
+        return <GenreChips genres={row.genreNames} />
+      }
+    },
+    {
+      field: 'userRating',
+      headerName: 'User Rating',
+      width: 120,
+      type: 'number',
+      sortable: true,
+      renderCell: (params: GridRenderCellParams<TVShow>) => {
+        const row = params.row as TVShow
+        if (row.isLoading) return '...'
+        if (row.error || params.value === null) return '-'
+        return (
+          <div className="flex items-center gap-1">
+            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+            <span className="font-medium">{params.value.toFixed(1)}</span>
+            <span className="text-xs text-muted-foreground">/10</span>
+          </div>
+        )
+      }
+    },
+    {
+      field: 'criticScore',
+      headerName: 'Critic Score',
+      width: 120,
+      type: 'number',
+      sortable: true,
+      renderCell: (params: GridRenderCellParams<TVShow>) => {
+        const row = params.row as TVShow
+        if (row.isLoading) return '...'
+        if (row.error || params.value === null) return '-'
+
+        const score = params.value as number
+        let colorClass = 'text-red-600'
+        if (score >= 75) colorClass = 'text-green-600'
+        else if (score >= 60) colorClass = 'text-yellow-600'
+
+        return (
+          <span className={`font-medium ${colorClass}`}>
+            {score}%
+          </span>
+        )
+      }
+    },
+    {
+      field: 'originalLanguage',
+      headerName: 'Language',
+      width: 100,
+      sortable: true,
+      renderCell: (params: GridRenderCellParams<TVShow>) => {
+        const row = params.row as TVShow
+        if (row.isLoading) return '...'
+        if (row.error || !params.value) return '-'
+
+        // Convert language code to readable format
+        const languageMap: Record<string, string> = {
+          'en': 'English',
+          'es': 'Spanish',
+          'fr': 'French',
+          'de': 'German',
+          'it': 'Italian',
+          'ja': 'Japanese',
+          'ko': 'Korean',
+          'zh': 'Chinese',
+          'pt': 'Portuguese',
+          'ru': 'Russian'
+        }
+
+        return languageMap[params.value as string] || (params.value as string).toUpperCase()
       }
     },
     {

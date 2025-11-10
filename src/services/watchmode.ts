@@ -1,9 +1,9 @@
 import axios from 'axios'
 import type {
   WatchModeSearchResult,
-  WatchModeSourcesResponse,
   WatchModeSeasonResponse,
   WatchModeEpisode,
+  WatchModeTitleDetails,
   StreamingSource,
   Season
 } from '@/types/show.types'
@@ -212,6 +212,55 @@ export class WatchModeAPI {
   }
 
   /**
+   * Get title details with optional appended data
+   * @param showId - The WatchMode show ID
+   * @param appendToResponse - Comma-separated list of data to append (e.g., "sources,seasons")
+   */
+  async getTitleDetails(showId: number, appendToResponse?: string): Promise<WatchModeTitleDetails> {
+    if (!this.apiKey) {
+      throw new Error('API key not configured')
+    }
+
+    const cacheKey = `details:${showId}:${appendToResponse || 'none'}`
+    const cached = getCached<WatchModeTitleDetails>(cacheKey)
+    if (cached) return cached
+
+    try {
+      const params: Record<string, string> = {
+        apiKey: this.apiKey
+      }
+
+      if (appendToResponse) {
+        params.append_to_response = appendToResponse
+      }
+
+      const response = await axios.get<WatchModeTitleDetails>(
+        `${BASE_URL}/title/${showId}/details/`,
+        { params }
+      )
+
+      console.log('Title details for', showId, ':', response.data)
+
+      setCache(cacheKey, response.data)
+      return response.data
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          throw new Error('Show not found')
+        }
+        if (error.response?.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment.')
+        }
+        if (error.response?.status === 401) {
+          throw new Error('Invalid API key')
+        }
+      }
+      console.error('Failed to get title details:', error)
+      throw new Error(`Failed to get title details: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  /**
    * Get episodes for a specific season
    */
   async getEpisodes(showId: number, seasonNumber: number): Promise<WatchModeEpisode[]> {
@@ -262,18 +311,38 @@ export class WatchModeAPI {
   }
 
   /**
-   * Get complete show data (search + sources + seasons)
+   * Get complete show data (search + title details with appended sources/seasons)
+   * This uses append_to_response to reduce API calls from 3 to 2
    */
   async getShowData(title: string) {
+    // Step 1: Search for the show to get its ID
     const searchResult = await this.searchShow(title)
     if (!searchResult) {
       return null
     }
 
-    const [sources, seasons] = await Promise.all([
-      this.getStreamingSources(searchResult.id),
-      this.getSeasons(searchResult.id)
-    ])
+    // Step 2: Get title details with sources and seasons appended (reduces API calls!)
+    const details = await this.getTitleDetails(searchResult.id, 'sources,seasons')
+
+    // Parse streaming sources from the appended data
+    let sources: StreamingSource[] = []
+    if (details.sources && Array.isArray(details.sources)) {
+      sources = details.sources
+      console.log('Sources from append_to_response:', sources.length)
+    }
+
+    // Parse seasons from the appended data
+    let seasons: Season[] = []
+    if (details.seasons && Array.isArray(details.seasons)) {
+      seasons = details.seasons.map(s => ({
+        season_number: s.number,
+        title: s.name,
+        first_air_date: s.air_date,
+        last_air_date: null,
+        episode_count: s.episode_count
+      }))
+      console.log('Seasons from append_to_response:', seasons.length)
+    }
 
     // Get the latest season
     const latestSeason = seasons.length > 0
@@ -310,12 +379,16 @@ export class WatchModeAPI {
 
     const result = {
       id: searchResult.id,
-      title: searchResult.name || searchResult.title, // Try 'name' first, then 'title'
+      title: details.title || searchResult.name || searchResult.title,
       sources,
       latestSeason: latestSeason?.season_number || null,
       seasonStartDate: latestSeason?.first_air_date || null,
       seasonEndDate,
-      episodeCount: latestSeason?.episode_count || null
+      episodeCount: latestSeason?.episode_count || null,
+      genreNames: details.genre_names || [],
+      userRating: details.user_rating || null,
+      criticScore: details.critic_score || null,
+      originalLanguage: details.original_language || null
     }
 
     console.log('Returning show data:', result)
