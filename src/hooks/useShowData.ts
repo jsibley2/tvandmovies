@@ -82,6 +82,7 @@ export function useShowData() {
               userRating: data.userRating,
               criticScore: data.criticScore,
               originalLanguage: data.originalLanguage,
+              comments: show.comments, // Preserve comments
               isLoading: false,
               error: null,
               lastUpdated: Date.now()
@@ -158,6 +159,7 @@ export function useShowData() {
       userRating: null,
       criticScore: null,
       originalLanguage: null,
+      comments: null,
       isLoading: false,
       error: null
     }
@@ -178,6 +180,13 @@ export function useShowData() {
     debouncedFetchShowData(id, title)
   }, [debouncedFetchShowData])
 
+  const updateShowComments = useCallback((id: string, comments: string) => {
+    // Update comments immediately in state
+    setShows(prev => prev.map(show =>
+      show.id === id ? { ...show, comments } : show
+    ))
+  }, [])
+
   const refreshShow = useCallback((id: string) => {
     const show = shows.find(s => s.id === id)
     if (show?.title) {
@@ -195,6 +204,7 @@ export function useShowData() {
     addShow,
     deleteShow,
     updateShowTitle,
+    updateShowComments,
     refreshShow,
     clearAll
   }

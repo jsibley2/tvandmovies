@@ -9,13 +9,14 @@ interface ShowDataGridProps {
   showData: {
     shows: TVShow[]
     updateShowTitle: (id: string, title: string) => void
+    updateShowComments: (id: string, comments: string) => void
     deleteShow: (id: string) => void
     refreshShow: (id: string) => void
   }
 }
 
 export function ShowDataGrid({ showData }: ShowDataGridProps) {
-  const { shows, updateShowTitle, deleteShow, refreshShow } = showData
+  const { shows, updateShowTitle, updateShowComments, deleteShow, refreshShow } = showData
 
   const columns: GridColDef[] = [
     {
@@ -75,11 +76,11 @@ export function ShowDataGrid({ showData }: ShowDataGridProps) {
       renderCell: (params: GridRenderCellParams<TVShow>) => {
         const row = params.row as TVShow
         if (row.isLoading) return '...'
-        if (row.error || params.value === null) return '-'
+        if (row.error || params.value == null) return '-'
         return (
           <div className="flex items-center gap-1">
             <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-            <span className="font-medium">{params.value.toFixed(1)}</span>
+            <span className="font-medium">{(params.value as number).toFixed(1)}</span>
             <span className="text-xs text-muted-foreground">/10</span>
           </div>
         )
@@ -94,7 +95,7 @@ export function ShowDataGrid({ showData }: ShowDataGridProps) {
       renderCell: (params: GridRenderCellParams<TVShow>) => {
         const row = params.row as TVShow
         if (row.isLoading) return '...'
-        if (row.error || params.value === null) return '-'
+        if (row.error || params.value == null) return '-'
 
         const score = params.value as number
         let colorClass = 'text-red-600'
@@ -198,6 +199,26 @@ export function ShowDataGrid({ showData }: ShowDataGridProps) {
       }
     },
     {
+      field: 'comments',
+      headerName: 'Comments',
+      width: 300,
+      editable: true,
+      sortable: false,
+      renderCell: (params: GridRenderCellParams<TVShow>) => {
+        const row = params.row as TVShow
+        const isEmpty = !params.value || params.value === ''
+
+        return (
+          <div className="flex items-center w-full h-full">
+            <span className={`${isEmpty ? 'text-gray-400 italic' : ''} truncate`}>
+              {params.value || 'Click to add notes...'}
+            </span>
+          </div>
+        )
+      },
+      cellClassName: () => 'cursor-text'
+    },
+    {
       field: 'actions',
       headerName: 'Actions',
       width: 120,
@@ -239,8 +260,14 @@ export function ShowDataGrid({ showData }: ShowDataGridProps) {
           }
         }}
         disableRowSelectionOnClick
-        processRowUpdate={(newRow) => {
-          updateShowTitle(newRow.id, newRow.title)
+        processRowUpdate={(newRow, oldRow) => {
+          // Check what changed
+          if (newRow.title !== oldRow.title) {
+            updateShowTitle(newRow.id, newRow.title)
+          }
+          if (newRow.comments !== oldRow.comments) {
+            updateShowComments(newRow.id, newRow.comments || '')
+          }
           return newRow
         }}
         onProcessRowUpdateError={(error) => {

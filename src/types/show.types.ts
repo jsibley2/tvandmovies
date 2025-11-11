@@ -28,6 +28,7 @@ export interface TVShow {
   userRating: number | null      // 0-10 scale
   criticScore: number | null     // 0-100 scale
   originalLanguage: string | null // ISO language code (e.g., "en")
+  comments: string | null        // User comments/notes
   isLoading: boolean
   error: string | null
   lastUpdated?: number
